@@ -595,21 +595,22 @@ do_install() {
 					# Will work for incomplete versions IE (17.12), but may not actually grab the "latest" if in the test channel
 					pkg_pattern="$(echo "$VERSION" | sed 's/-ce-/~ce~.*/g' | sed 's/-/.*/g')"
 					search_command="apt-cache madison docker-ce | grep '$pkg_pattern' | head -1 | awk '{\$1=\$1};1' | cut -d' ' -f 3"
-					pkg_version="$($sh_c "$search_command")"
 					echo "INFO: Searching repository for VERSION '$VERSION'"
 					echo "INFO: $search_command"
+					pkg_version="$($sh_c "$search_command")"
 					if [ -z "$pkg_version" ]; then
 						echo
 						echo "ERROR: '$VERSION' not found amongst apt-cache madison results"
 						echo
 						exit 1
 					fi
+					pkg_version="=$pkg_version"
+
 					if version_gte "18.09"; then
 						search_command="apt-cache madison docker-ce-cli | grep '$pkg_pattern' | head -1 | awk '{\$1=\$1};1' | cut -d' ' -f 3"
 						echo "INFO: $search_command"
 						cli_pkg_version="=$($sh_c "$search_command")"
 					fi
-					pkg_version="=$pkg_version"
 				fi
 			fi
 			(
@@ -700,22 +701,23 @@ do_install() {
 					fi
 					pkg_pattern="$(echo "$VERSION" | sed 's/-ce-/\\\\.ce.*/g' | sed 's/-/.*/g').*$pkg_suffix"
 					search_command="$pkg_manager list --showduplicates docker-ce | grep '$pkg_pattern' | tail -1 | awk '{print \$2}'"
-					pkg_version="$($sh_c "$search_command")"
 					echo "INFO: Searching repository for VERSION '$VERSION'"
 					echo "INFO: $search_command"
+					pkg_version="$($sh_c "$search_command")"
 					if [ -z "$pkg_version" ]; then
 						echo
 						echo "ERROR: '$VERSION' not found amongst $pkg_manager list results"
 						echo
 						exit 1
 					fi
+					# Cut out the epoch and prefix with a '-'
+					pkg_version="-$(echo "$pkg_version" | cut -d':' -f 2)"
+
 					if version_gte "18.09"; then
 						# older versions don't support a cli package
 						search_command="$pkg_manager list --showduplicates docker-ce-cli | grep '$pkg_pattern' | tail -1 | awk '{print \$2}'"
 						cli_pkg_version="$($sh_c "$search_command" | cut -d':' -f 2)"
 					fi
-					# Cut out the epoch and prefix with a '-'
-					pkg_version="-$(echo "$pkg_version" | cut -d':' -f 2)"
 				fi
 			fi
 			(
